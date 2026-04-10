@@ -61,7 +61,7 @@ const showError = (msg) => {
   const trimmedEmail = email.trim();
   const trimmedPassword = password.trim();
   const trimmedConfirmPassword = confirmPassword.trim();
-  const trimmedPhone = phone.trim();
+  let trimmedPhone = phone.trim();
 
   // First name validation
   if (!trimmedFirstName || trimmedFirstName.length < 2) {
@@ -82,11 +82,50 @@ const showError = (msg) => {
     return;
   }
 
-  // Phone validation (optional)
-  const phoneRegex = /^[0-9]{10}$/; // 10 digit format
-  if (trimmedPhone && !phoneRegex.test(trimmedPhone)) {
-    showError("Please enter a valid 10-digit phone number");
-    return;
+  // Phone validation with country code +91
+  // Remove any non-digit characters and clean the phone number
+  let cleanPhone = trimmedPhone.replace(/\D/g, '');
+
+  // If phone is provided, validate it
+  if (trimmedPhone) {
+    // Check if phone already has country code
+    if (cleanPhone.startsWith('91')) {
+      // If it starts with 91, ensure it has exactly 12 digits (91 + 10 digits)
+      if (cleanPhone.length === 12) {
+        trimmedPhone = `+${cleanPhone}`;
+      } else if (cleanPhone.length === 10) {
+        // If it's just 10 digits, add +91
+        trimmedPhone = `+91${cleanPhone}`;
+      } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+        // If it starts with 0, remove 0 and add +91
+        cleanPhone = cleanPhone.substring(1);
+        if (cleanPhone.length === 10) {
+          trimmedPhone = `+91${cleanPhone}`;
+        } else {
+          showError("Please enter a valid 10-digit phone number");
+          return;
+        }
+      } else {
+        showError("Please enter a valid 10-digit phone number");
+        return;
+      }
+    } else {
+      // If no country code, add +91
+      if (cleanPhone.length === 10) {
+        trimmedPhone = `+91${cleanPhone}`;
+      } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+        cleanPhone = cleanPhone.substring(1);
+        if (cleanPhone.length === 10) {
+          trimmedPhone = `+91${cleanPhone}`;
+        } else {
+          showError("Please enter a valid 10-digit phone number");
+          return;
+        }
+      } else {
+        showError("Please enter a valid 10-digit phone number");
+        return;
+      }
+    }
   }
 
   // Password validation
@@ -126,6 +165,7 @@ const showError = (msg) => {
         lastName: trimmedLastName,
         email: trimmedEmail,
         password: trimmedPassword,
+        phoneNumber: trimmedPhone || null, // Send phone with country code or null if empty
         deviceInfo: {
           deviceToken: "string", // replace with actual device token if available
           deviceType: Platform.OS, // "ios" or "android"
@@ -161,6 +201,19 @@ const showError = (msg) => {
     setIsLoading(false);
     scaleValue.value = withSpring(1);
   }
+  };
+
+  // Format phone number as user types
+  const handlePhoneChange = (text) => {
+    // Remove any non-digit characters
+    let cleaned = text.replace(/\D/g, '');
+
+    // Limit to 10 digits (since we'll add +91)
+    if (cleaned.length > 10) {
+      cleaned = cleaned.slice(0, 10);
+    }
+
+    setPhone(cleaned);
   };
 
   return (
@@ -228,13 +281,18 @@ const showError = (msg) => {
 
               <View style={styles.inputContainer}>
                 <Phone size={20} color="#0A3A9E" />
+                <View style={styles.countryCodeContainer}>
+                  <Text style={styles.countryCodeText}>+91</Text>
+                  <View style={styles.countryCodeSeparator} />
+                </View>
                 <TextInput
-                  style={styles.textInput}
-                  placeholder="Phone (Optional)"
+                  style={styles.phoneInput}
+                  placeholder="Phone Number (Optional)"
                   placeholderTextColor="#9CA3AF"
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={handlePhoneChange}
                   keyboardType="phone-pad"
+                  maxLength={10}
                 />
               </View>
 
@@ -382,6 +440,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  countryCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '600',
+  },
+  countryCodeSeparator: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#E9ECF0',
+    marginLeft: 8,
+  },
+  phoneInput: {
     flex: 1,
     fontSize: 16,
     color: '#1F2937',

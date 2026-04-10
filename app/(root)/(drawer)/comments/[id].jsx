@@ -323,7 +323,7 @@ export default function CommentsScreen() {
 
             <View style={styles.headerTitleContainer}>
               <MessageCircle size={20} color="#F7CD00" />
-              <Text style={styles.headerTitle}>Comments ({comments.length})</Text>
+              <Text style={styles.headerTitle}>Chats ({comments.length})</Text>
             </View>
 
             <View style={styles.headerSpacer} />
@@ -333,7 +333,7 @@ export default function CommentsScreen() {
           {loading ? (
             <View style={styles.loaderContainer}>
               <ActivityIndicator size="large" color="#F7CD00" />
-              <Text style={styles.loaderText}>Loading comments...</Text>
+              <Text style={styles.loaderText}>Loading chats...</Text>
             </View>
           ) : (
             <ScrollView
@@ -361,7 +361,7 @@ export default function CommentsScreen() {
               {comments.length === 0 && (
                 <View style={styles.emptyState}>
                   <MessageCircle size={48} color="#F7CD00" />
-                  <Text style={styles.emptyStateText}>No comments yet</Text>
+                  <Text style={styles.emptyStateText}>No Chats yet</Text>
                   <Text style={styles.emptyStateSubtext}>
                     Be the first to share your thoughts!
                   </Text>
@@ -390,7 +390,7 @@ export default function CommentsScreen() {
               <TextInput
                 ref={inputRef}
                 style={styles.commentInput}
-                placeholder="Add a comment..."
+                placeholder="Add a chat..."
                 placeholderTextColor="#9CA3AF"
                 value={newComment}
                 onChangeText={setNewComment}
@@ -402,6 +402,18 @@ export default function CommentsScreen() {
                 enablesReturnKeyAutomatically={true}
                 returnKeyType="send"
                 onSubmitEditing={handleSendComment}
+                contextMenuHidden={true}
+                selectTextOnFocus={false}
+                editable={true}
+                onPaste={() => {
+                  return false;
+                }}
+                onKeyPress={(e) => {
+                  if (Platform.OS === 'web' && (e.nativeEvent.key === 'v' && (e.nativeEvent.ctrlKey || e.nativeEvent.metaKey))) {
+                    e.preventDefault();
+                    return false;
+                  }
+                }}
               />
             </View>
 

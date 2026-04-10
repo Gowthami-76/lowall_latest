@@ -20,7 +20,7 @@ import { Calendar } from "react-native-calendars";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CheckBox from '@react-native-community/checkbox';
-import { Calendar as CalendarIcon, Clock, CheckCircle, XCircle, DollarSign, Tag, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Calendar as CalendarIcon, Clock, CheckCircle, XCircle, DollarSign, Tag, Sparkles, ChevronLeft, ChevronRight, Info } from 'lucide-react-native';
 
 import { BASE_URL } from '@/utils/constants';
 
@@ -372,6 +372,19 @@ const CreateSlotScreen = () => {
       return;
     }
 
+    // Validate 3-digit number for resell amount
+    if (isResell && resellAmount.trim()) {
+      const amountNum = parseFloat(resellAmount);
+      if (amountNum < 100 || amountNum > 999) {
+        Alert.alert(
+          'Invalid Amount',
+          'Please enter a valid 3-digit amount (100 to 999 rupees)',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     console.log('✅ Booking confirmed');
     console.log('Date:', selectedDate);
     console.log('Slot:', selectedSlot);
@@ -536,6 +549,30 @@ const CreateSlotScreen = () => {
     );
   };
 
+  // Calculate service charge (5-10% of amount)
+  const getServiceCharge = () => {
+    if (!isResell || !resellAmount) return 0;
+    const amount = parseFloat(resellAmount);
+    if (isNaN(amount)) return 0;
+    // Using 7.5% as average between 5-10%
+    return (amount * 7.5) / 100;
+  };
+
+  const getDeveloperShare = () => {
+    if (!isResell || !resellAmount) return 0;
+    const amount = parseFloat(resellAmount);
+    if (isNaN(amount)) return 0;
+    // Developer gets 5-10% (using 7.5% as average)
+    return (amount * 7.5) / 100;
+  };
+
+  const getUserShare = () => {
+    if (!isResell || !resellAmount) return 0;
+    const amount = parseFloat(resellAmount);
+    if (isNaN(amount)) return 0;
+    return amount - getDeveloperShare();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
@@ -694,20 +731,37 @@ const CreateSlotScreen = () => {
             </View>
 
             {isResell && (
-              <View style={styles.amountContainer}>
-                <View style={styles.amountLabelContainer}>
-{/*                   <DollarSign size={16} color="#0A3A9E" /> */}
-                  <Text style={styles.amountLabel}>Resell Amount (₹)</Text>
+              <>
+                <View style={styles.amountContainer}>
+                  <View style={styles.amountLabelContainer}>
+                    <Text style={styles.amountLabel}>Resell Amount (₹) - 3 digits only</Text>
+                  </View>
+                  <TextInput
+                    style={styles.amountInput}
+                    placeholder="Enter amount (100 to 999 rupees)"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                    value={resellAmount}
+                    onChangeText={(text) => {
+                      // Allow only numbers and limit to 3 digits
+                      const cleaned = text.replace(/[^0-9]/g, '');
+                      if (cleaned.length <= 3) {
+                        setResellAmount(cleaned);
+                      }
+                    }}
+                    maxLength={3}
+                  />
                 </View>
-                <TextInput
-                  style={styles.amountInput}
-                  placeholder="Enter amount in rupees"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="numeric"
-                  value={resellAmount}
-                  onChangeText={setResellAmount}
-                />
-              </View>
+
+                {resellAmount && resellAmount.length === 3 && (
+                  <View style={styles.serviceChargeContainer}>
+                    <Info size={16} color="#0A3A9E" />
+                    <Text style={styles.serviceChargeText}>
+                      Service charge (5-10%) of ₹{resellAmount} goes to developer: ₹{getDeveloperShare().toFixed(2)}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
 
             <View style={styles.dialogButtons}>
@@ -808,7 +862,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
-   shadowColor: "transparent",
+    shadowColor: "transparent",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1015,6 +1069,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     color: '#111827',
     fontWeight: '500',
+  },
+  serviceChargeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  serviceChargeText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#0A3A9E',
+    fontWeight: '600',
   },
   scheduleButton: {
     marginTop: 20,

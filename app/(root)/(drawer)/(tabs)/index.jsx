@@ -745,7 +745,11 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <View style={styles.headerCenter}>
-              <Text style={styles.logoText}>LOWALL</Text>
+             <Image
+               source={require('@/assets/images/lowalllogo.png')} // or your logo path
+               style={styles.logoImage}
+               resizeMode="contain"
+             />
               {wallpaperData.title && (
                 <Text style={styles.wallpaperTitle} numberOfLines={1}>
                   {wallpaperData.title}
@@ -908,14 +912,14 @@ export default function HomeScreen() {
                         style={styles.dropdownItem}
                         onPress={() => handleDownloadOption('Save Live Wallpaper')}
                       >
-                        <Text style={styles.dropdownText}>Set as Home Screen</Text>
+                        <Text style={styles.dropdownText}>Set as live wallpaper</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.dropdownItem}
                         onPress={() => handleDownloadOption('Save as Live Screen Saver')}
                       >
-                        <Text style={styles.dropdownText}>Set as Lock Screen</Text>
+                        <Text style={styles.dropdownText}>Set as Home screen</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -995,17 +999,18 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    zIndex: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+     top: 0,
+     left: 0,
+     right: 0,
+     flexDirection: 'row',
+     alignItems: 'center',
+     justifyContent: 'space-between',
+     paddingHorizontal: 16,
+    paddingTop:10,
+     paddingBottom: 15, // Reduced from 20
+     zIndex: 20,
+     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+     minHeight: 60, // Add fixed minimum height
   },
   iconButton: {
     width: 40,
@@ -1218,4 +1223,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 900,
   },
+logoImage: {
+  width: 150,
+  height: 60,
+},
 });

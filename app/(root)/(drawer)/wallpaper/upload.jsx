@@ -11,6 +11,7 @@ import {
   FlatList,
   ActivityIndicator,
   Dimensions,
+  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/utils/constants';
 
-const occasionOptions = ['Birthday', 'Anniversary', 'Motivation', 'Love'];
+const occasionOptions = ['Birthday', 'Anniversary', 'Motivation', 'Love', 'ETC'];
 
 const timeSlots = [
   '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM',
@@ -127,6 +128,8 @@ export default function UploadScreen() {
   const [selectedTime, setSelectedTime] = useState(null);
   const [currentStep, setCurrentStep] = useState('upload');
   const [loading, setLoading] = useState(false);
+  const [showEtcModal, setShowEtcModal] = useState(false);
+  const [customOccasion, setCustomOccasion] = useState('');
 
   const currentDisabledSlots = selectedDate ? (disabledSlotsByDate[selectedDate] || []) : [];
 
@@ -179,6 +182,25 @@ export default function UploadScreen() {
 
     if (!result.canceled && result.assets?.length > 0) {
       setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleOccasionPress = (item) => {
+    if (item === 'ETC') {
+      setShowEtcModal(true);
+      setCustomOccasion('');
+    } else {
+      setSelectedOccasion(item);
+    }
+  };
+
+  const handleCustomOccasionSubmit = () => {
+    if (customOccasion.trim()) {
+      setSelectedOccasion(customOccasion.trim());
+      setShowEtcModal(false);
+      setCustomOccasion('');
+    } else {
+      Alert.alert('Error', 'Please enter an occasion');
     }
   };
 
@@ -317,6 +339,7 @@ export default function UploadScreen() {
     setMessage('');
     setName('');
     setSelectedOccasion(null);
+    setCustomOccasion('');
   };
 
   const renderStepIndicator = () => (
@@ -409,7 +432,7 @@ export default function UploadScreen() {
             </Text>
             <TouchableOpacity style={styles.proceedButton} onPress={proceedToScheduling}>
               <CalendarIcon size={18} color="white" />
-              <Text style={styles.proceedButtonText}>Proceed to Scheduling</Text>
+              <Text style={styles.proceedButtonTextSchedule}>Proceed to Scheduling</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.backButton} onPress={resetToUpload}>
               <Text style={styles.backButtonText}>Upload New Wallpaper</Text>
@@ -584,7 +607,7 @@ export default function UploadScreen() {
             <TouchableOpacity
               key={item}
               style={[styles.tag, selectedOccasion === item && styles.selectedTag]}
-              onPress={() => setSelectedOccasion(item)}
+              onPress={() => handleOccasionPress(item)}
             >
               <Text
                 style={[styles.tagText, selectedOccasion === item && styles.selectedTagText]}
@@ -594,6 +617,15 @@ export default function UploadScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {selectedOccasion && selectedOccasion !== 'Birthday' && selectedOccasion !== 'Anniversary' && selectedOccasion !== 'Motivation' && selectedOccasion !== 'Love' && selectedOccasion !== 'ETC' && (
+          <View style={styles.customOccasionBadge}>
+            <Text style={styles.customOccasionText}>Selected: {selectedOccasion}</Text>
+            <TouchableOpacity onPress={() => setSelectedOccasion(null)}>
+              <Text style={styles.clearText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.buttonWrapper}>
           <TouchableOpacity
@@ -607,6 +639,42 @@ export default function UploadScreen() {
             <ArrowRight size={20} color="#0A3A9E" />
           </TouchableOpacity>
         </View>
+
+        {/* ETC Modal */}
+        <Modal
+          visible={showEtcModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowEtcModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Enter Occasion</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g., Festival, Holiday, Celebration..."
+                placeholderTextColor="#9CA3AF"
+                value={customOccasion}
+                onChangeText={setCustomOccasion}
+                autoFocus
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowEtcModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.submitButton]}
+                  onPress={handleCustomOccasionSubmit}
+                >
+                  <Text style={styles.submitButtonText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaProvider>
   );
@@ -860,6 +928,28 @@ const styles = StyleSheet.create({
   selectedTagText: {
     color: '#0A3A9E',
     fontWeight: '700',
+  },
+  customOccasionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F7CD00',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  customOccasionText: {
+    fontSize: 14,
+    color: '#0A3A9E',
+    fontWeight: '700',
+  },
+  clearText: {
+    fontSize: 16,
+    color: '#0A3A9E',
+    fontWeight: '700',
+    marginLeft: 10,
   },
   proceedButtonNew: {
     flexDirection: 'row',
@@ -1175,5 +1265,66 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0A3A9E',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  cancelButtonText: {
+    color: '#6B7280',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#0A3A9E',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
